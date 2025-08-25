@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative Swarm App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col lg:flex-row h-screen overflow-hidden">
+
+    <!-- Canvas Container -->
+    <div class="flex-1 relative flex items-center justify-center">
+        <canvas id="swarmCanvas" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="bg-gray-800 w-full lg:w-96 flex-shrink-0 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-MEDIUM mb-6 text-yellow-300">Swarm Controls</h1>
+
+        <!-- Randomization Buttons -->
+        <div class="flex flex-col space-y-4 mb-8">
+            <button id="randomizeAllBtn" class="w-full bg-grey-100 hover:bg-grey-800 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150 ease-in-out transform hover:scale-102">
+                Randomize Everything (No Color)
+            </button>
+            <button id="randomizeColorBtn" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150 ease-in-out transform hover:scale-102">
+                Randomize Color Palette
+            </button>
+        </div>
+
+        <!-- Color Controls Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-purple-300">Color Controls</h2>
+            
+            <div class="space-y-2 mb-4">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="colorMode" value="random" checked class="form-radio text-blue-500">
+                    <span class="ml-2">Random</span>
+                </label>
+                <label class="inline-flex items-center ml-4">
+                    <input type="radio" name="colorMode" value="single" class="form-radio text-blue-500">
+                    <span class="ml-2">Single Color</span>
+                </label>
+                <label class="inline-flex items-center ml-4">
+                    <input type="radio" name="colorMode" value="palette" class="form-radio text-blue-500">
+                    <span class="ml-2">Palette</span>
+                </label>
+            </div>
+
+            <!-- Single Color Slider -->
+            <div id="singleColorControls" class="space-y-4 hidden">
+                <div>
+                    <label for="hue" class="block mb-2 font-medium">Hue: <span id="hueValue">200</span></label>
+                    <input type="range" id="hue" min="0" max="360" value="200" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Palette Dropdown -->
+            <div id="paletteControls" class="hidden">
+                <label for="paletteSelect" class="block mb-2 font-medium">Palette Selection</label>
+                <select id="paletteSelect" class="w-full bg-gray-700 p-2 rounded-lg">
+                    <option value="0">Sunset Pastels</option>
+                    <option value="1">Cool Ocean</option>
+                    <option value="2">Electric Sky</option>
+                    <option value="3">Modern Contrast</option>
+                    <option value="4">Forest Whisper</option>
+                    <option value="5">Spring Meadow</option>
+                    <option value="6">Retro Pop</option>
+                    <option value="7">Neon Candy</option>
+                    <option value="8">Deep Sea</option>
+                    <option value="9">Summer Garden</option>
+                    <option value="10">Cosmic Dance</option>
+                    <option value="11">Golden Glow</option>
+                    <option value="12">Cyberpunk Fusion</option>
+                    <option value="13">Desert Sands</option>
+                    <option value="14">Burnt Earth</option>
+                    <option value="15">Volcanic Sunset</option>
+                    <option value="16">Dark & Stormy</option>
+                    <option value="17">Monochrome Earth</option>
+                    <option value="18">City Lights</option>
+                    <option value="19">Golden Age</option>
+                    <option value="20">Sapphire Storm</option>
+                    <option value="21">Ruby Bloom</option>
+                    <option value="22">Jungle Fire</option>
+                    <option value="23">Earthy Tones</option>
+                    <option value="24">Vivid Citrus</option>
+                    <option value="25">Nightfall</option>
+                    <option value="26">Summer Sun</option>
+                    <option value="27">Autumn Hues</option>
+                    <option value="28">Warm Sunset</option>
+                    <option value="29">Custom Random</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Shape Controls Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-purple-300">Shape Controls</h2>
+            <div class="space-y-4">
+                <label for="shapeSelect" class="block mb-2 font-medium">Particle Shape</label>
+                <select id="shapeSelect" class="w-full bg-gray-700 p-2 rounded-lg">
+                    <option value="circle">Circle</option>
+                    <option value="square">Square</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="star">Star</option>
+                    <option value="customImage">Custom Image</option>
+                </select>
+                
+                <!-- Custom Image Upload -->
+                <div id="customImageControls" class="hidden">
+                    <label for="imageUpload" class="block mb-2 font-medium">Upload Custom Image</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="w-full text-sm text-gray-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100 cursor-pointer
+                    ">
+                </div>
+                
+                <!-- Rotation Speed -->
+                <div class="mt-4">
+                    <label for="rotationSpeed" class="block mb-2 font-medium">Rotation Speed: <span id="rotationSpeedValue">0.05</span></label>
+                    <input type="range" id="rotationSpeed" min="-0.1" max="0.1" value="0.05" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <!-- Movement and Life Cycle Controls -->
+        <h2 class="text-2xl font-bold mb-4 text-purple-300">Swarm Movement</h2>
+        <div id="controls" class="space-y-6">
+            <!-- Particle Count -->
+            <div>
+                <label for="particleCount" class="block mb-2 font-medium">Particle Count: <span id="particleCountValue">100</span></label>
+                <input type="range" id="particleCount" min="10" max="500" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Velocity Cap -->
+            <div>
+                <label for="velocityCap" class="block mb-2 font-medium">Velocity Cap: <span id="velocityCapValue">2</span></label>
+                <input type="range" id="velocityCap" min="0.1" max="10" value="2" step="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Trail Opacity -->
+            <div>
+                <label for="trailOpacity" class="block mb-2 font-medium">Trail Opacity: <span id="trailOpacityValue">0.05</span></label>
+                <input type="range" id="trailOpacity" min="0.001" max="0.5" value="0.05" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Repulsion Radius -->
+            <div>
+                <label for="repulsionRadius" class="block mb-2 font-medium">Repulsion Radius: <span id="repulsionRadiusValue">50</span></label>
+                <input type="range" id="repulsionRadius" min="0" max="200" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Attraction Radius -->
+            <div>
+                <label for="attractionRadius" class="block mb-2 font-medium">Attraction Radius: <span id="attractionRadiusValue">150</span></label>
+                <input type="range" id="attractionRadius" min="0" max="300" value="150" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Cohesion Force -->
+            <div>
+                <label for="cohesionForce" class="block mb-2 font-medium">Cohesion Force: <span id="cohesionForceValue">0.005</span></label>
+                <input type="range" id="cohesionForce" min="0.001" max="0.05" value="0.005" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Friction -->
+            <div>
+                <label for="friction" class="block mb-2 font-medium">Friction: <span id="frictionValue">0.98</span></label>
+                <input type="range" id="friction" min="0.9" max="0.999" value="0.98" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- New Random Force Slider -->
+            <div>
+                <label for="randomForce" class="block mb-2 font-medium">Random Force: <span id="randomForceValue">0.01</span></label>
+                <input type="range" id="randomForce" min="0" max="0.1" value="0.01" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            
+            <!-- New Sliders for Growth/Shrink Logic -->
+            <h2 class="text-2xl font-bold mt-8 mb-4 text-purple-300">Life Cycle Controls</h2>
+            <div>
+                <label for="baseRadius" class="block mb-2 font-medium">Base Radius: <span id="baseRadiusValue">2</span></label>
+                <input type="range" id="baseRadius" min="1" max="5" value="2" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="maxRadius" class="block mb-2 font-medium">Max Radius: <span id="maxRadiusValue">10</span></label>
+                <input type="range" id="maxRadius" min="5" max="20" value="10" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="growthRate" class="block mb-2 font-medium">Growth Rate: <span id="growthRateValue">0.2</span></label>
+                <input type="range" id="growthRate" min="0.05" max="1.0" value="0.2" step="0.05" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="growthChance" class="block mb-2 font-medium">Growth Chance (Self): <span id="growthChanceValue">0.005</span></label>
+                <input type="range" id="growthChance" min="0.001" max="0.05" value="0.005" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="contagionChance" class="block mb-2 font-medium">Contagion Chance: <span id="contagionChanceValue">0.2</span></label>
+                <input type="range" id="contagionChance" min="0.05" max="1.0" value="0.2" step="0.05" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="shrinkChance" class="block mb-2 font-medium">Shrink Chance (Self): <span id="shrinkChanceValue">0.001</span></label>
+                <input type="range" id="shrinkChance" min="0.001" max="0.05" value="0.001" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+        </div>
+
+        <!-- Preset and Export Buttons -->
+        <div class="mt-8 space-y-4">
+            <button id="savePresetBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Save Preset
+            </button>
+            <button id="loadPresetBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Load Preset
+            </button>
+            <button id="exportBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Export Image
+            </button>
+        </div>
+
+        <div id="messageBox" class="mt-4 text-center p-3 rounded-lg hidden"></div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('swarmCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get all the UI elements at the top of the script
+        const sliders = document.querySelectorAll('#controls input[type="range"]');
+        const hueSlider = document.getElementById('hue');
+        const colorModeRadios = document.querySelectorAll('input[name="colorMode"]');
+        const singleColorControls = document.getElementById('singleColorControls');
+        const paletteControls = document.getElementById('paletteControls');
+        const paletteSelect = document.getElementById('paletteSelect');
+        const shapeSelect = document.getElementById('shapeSelect');
+        const customImageControls = document.getElementById('customImageControls');
+        const imageUpload = document.getElementById('imageUpload');
+        const saveBtn = document.getElementById('savePresetBtn');
+        const loadBtn = document.getElementById('loadPresetBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const randomizeAllBtn = document.getElementById('randomizeAllBtn');
+        const randomizeColorBtn = document.getElementById('randomizeColorBtn');
+        const messageBox = document.getElementById('messageBox');
+        
+        // Pre-defined color palettes
+        const palettes = [
+            ['#D9A299', '#DCC5B2', '#F0E4D3', '#FAF7F3'], // Sunset Pastels
+            ['#FFEAEA', '#F5CBCB', '#748DAE', '#9ECAD6'], // Cool Ocean
+            ['#FDF5AA', '#58A0C8', '#34699A', '#113F67'], // Electric Sky
+            ['#D7D7D7', '#447D9B', '#273F4F', '#FE7743'], // Modern Contrast
+            ['#FFF9E5', '#DCD0A8', '#4A9782', '#004030'], // Forest Whisper
+            ['#E8FFD7', '#93DA97', '#5E936C', '#3E5F44'], // Spring Meadow
+            ['#DC3C22', '#EAC8A6', '#FBF5DE', '#3D74B6'], // Retro Pop
+            ['#EA5B6F', '#FF894F', '#FFCB61', '#77BEF0'], // Neon Candy
+            ['#320A6B', '#065084', '#0F828C', '#78B9B5'], // Deep Sea
+            ['#FFD6BA', '#FFF9BD', '#DEE791', '#A3DC9A'], // Summer Garden
+            ['#FAEB92', '#CC66DA', '#9929EA', '#000000'], // Cosmic Dance
+            ['#FFBC4C', '#FFDE63', '#FEFFC4', '#799EFF'], // Golden Glow
+            ['#63C8FF', '#4DFFBE', '#FDFFB8', '#FF2DD1'], // Cyberpunk Fusion
+            ['#EEEEEE', '#DCCFC0', '#A2AF9B', '#FAF9EE'], // Desert Sands
+            ['#F8B259', '#C75D2C', '#D96F32', '#F3E9DC'], // Burnt Earth
+            ['#FFCC00', '#EB5B00', '#B12C00', '#640D5F'], // Volcanic Sunset
+            ['#000000', '#465C88', '#FF7A30', '#E9E3DF'], // Dark & Stormy
+            ['#F8F3CE', '#DDDAD0', '#7A7A73', '#57564F'], // Monochrome Earth
+            ['#17313E', '#415E72', '#C5B0CD', '#F3E2D4'], // City Lights
+            ['#D3AF37', '#FFD700', '#FCF8DD', '#00809D'], // Golden Age
+            ['#B2B0E8', '#7A85C1', '#3B38A0', '#1A2A80'], // Sapphire Storm
+            ['#EEEEEE', '#E7D3D3', '#D25D5D', '#B9375D'], // Ruby Bloom
+            ['#FB4141', '#FF9B2F', '#B4E50D', '#78C841'], // Jungle Fire
+            ['#FFF4A4', '#FED16A', '#F97A00', '#386641'], // Earthy Tones
+            ['#8ABB6C', '#DDDEAB', '#D92C54', '#932F67'], // Vivid Citrus
+            ['#FEA405', '#FFFFF0', '#DBE4C9', '#8AA624'], // Nightfall
+            ['#E1AA36', '#ECECBB', '#239BA7', '#7ADAA5'], // Summer Sun
+            ['#280A3E', '#689B8A', '#F9CB99', '#F2EDD1'], // Autumn Hues
+            ['#FFF8E8', '#F08B51', '#BB6653', '#DEE8CE'], // Warm Sunset',
+            ['#000000'] // Placeholder for the custom random palette
+        ];
+
+        let settings = {
+            particleCount: 100,
+            velocityCap: 2, // New setting
+            trailOpacity: 0.05,
+            repulsionRadius: 50,
+            attractionRadius: 150,
+            cohesionForce: 0.005,
+            friction: 0.98,
+            randomForce: 0.01, // New setting for constant movement
+            baseRadius: 2,
+            maxRadius: 10,
+            growthRate: 0.2,
+            growthChance: 0.005,
+            contagionChance: 0.2,
+            shrinkChance: 0.001,
+            colorMode: 'random',
+            hue: 200,
+            paletteIndex: 0,
+            shape: 'circle',
+            rotationSpeed: 0.05
+        };
+
+        const particles = [];
+        let customImage = null;
+        let customPalette = [];
+        let frameCount = 0; // New variable to track frames for velocity modulation
+
+        function getRandomPaletteColor() {
+            if (settings.paletteIndex === palettes.length - 1) {
+                return customPalette[Math.floor(Math.random() * customPalette.length)];
+            }
+            const palette = palettes[settings.paletteIndex];
+            return palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        function setupCanvas() {
+            canvas.width = window.innerWidth > 768 ? window.innerWidth - 384 : window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            particles.length = 0;
+            for (let i = 0; i < settings.particleCount; i++) {
+                let color;
+                if (settings.colorMode === 'random') {
+                    color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+                } else if (settings.colorMode === 'single') {
+                    color = `hsl(${settings.hue}, 80%, 60%)`;
+                } else if (settings.colorMode === 'palette') {
+                    color = getRandomPaletteColor();
+                }
+
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: Math.random() * 2 - 1,
+                    vy: Math.random() * 2 - 1,
+                    color: color,
+                    radius: settings.baseRadius,
+                    isGrowing: false,
+                    shape: settings.shape,
+                    rotation: Math.random() * 2 * Math.PI,
+                    rotationSpeed: settings.rotationSpeed,
+                });
+            }
+            frameCount = 0; // Reset frame counter on setup
+        }
+        setupCanvas();
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            updateUI();
+        });
+
+        
+        function updateUI() {
+            for (const key in settings) {
+                const slider = document.getElementById(key);
+                if (slider) {
+                    slider.value = settings[key];
+                    document.getElementById(key + 'Value').textContent = parseFloat(settings[key]).toFixed(slider.step < 1 ? 3 : 2);
+                }
+            }
+            
+            document.querySelector(`input[name="colorMode"][value="${settings.colorMode}"]`).checked = true;
+            if (settings.colorMode === 'single') {
+                singleColorControls.classList.remove('hidden');
+                paletteControls.classList.add('hidden');
+            } else if (settings.colorMode === 'palette') {
+                paletteControls.classList.remove('hidden');
+                singleColorControls.classList.add('hidden');
+                paletteSelect.value = settings.paletteIndex;
+            } else {
+                singleColorControls.classList.add('hidden');
+                paletteControls.classList.add('hidden');
+            }
+            
+            shapeSelect.value = settings.shape;
+            if (settings.shape === 'customImage') {
+                customImageControls.classList.remove('hidden');
+            } else {
+                customImageControls.classList.add('hidden');
+            }
+        }
+        updateUI();
+
+        sliders.forEach(slider => {
+            const valueSpan = document.getElementById(slider.id + 'Value');
+            slider.addEventListener('input', () => {
+                const value = parseFloat(slider.value);
+                valueSpan.textContent = value.toFixed(slider.step < 1 ? 3 : 2);
+                settings[slider.id] = value;
+                if (slider.id === 'particleCount') {
+                    setupCanvas();
+                } else if (slider.id === 'baseRadius') {
+                    particles.forEach(p => p.radius = settings.baseRadius);
+                } else if (slider.id === 'rotationSpeed') {
+                    particles.forEach(p => p.rotationSpeed = settings.rotationSpeed);
+                }
+            });
+        });
+
+        hueSlider.addEventListener('input', () => {
+            document.getElementById('hueValue').textContent = hueSlider.value;
+            settings.hue = parseFloat(hueSlider.value);
+            particles.forEach(p => p.color = `hsl(${settings.hue}, 80%, 60%)`);
+        });
+
+        colorModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                settings.colorMode = e.target.value;
+                updateUI();
+                setupCanvas();
+            });
+        });
+
+        paletteSelect.addEventListener('change', (e) => {
+            settings.paletteIndex = parseInt(e.target.value);
+            setupCanvas();
+        });
+        
+        shapeSelect.addEventListener('change', (e) => {
+            settings.shape = e.target.value;
+            updateUI();
+            setupCanvas();
+        });
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    customImage = new Image();
+                    customImage.onload = function() {
+                        setupCanvas();
+                    };
+                    customImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `mt-4 text-center p-3 rounded-lg transition-all duration-300`;
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-600', 'text-white', 'block');
+            } else if (type === 'info') {
+                messageBox.classList.add('bg-blue-600', 'text-white', 'block');
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('block');
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        saveBtn.addEventListener('click', () => {
+            localStorage.setItem('swarmPreset', JSON.stringify(settings));
+            showMessage('Preset saved!', 'success');
+        });
+
+        loadBtn.addEventListener('click', () => {
+            const savedPreset = localStorage.getItem('swarmPreset');
+            if (savedPreset) {
+                settings = JSON.parse(savedPreset);
+                updateUI();
+                setupCanvas();
+                showMessage('Preset loaded!', 'info');
+            } else {
+                showMessage('No saved preset found.', 'info');
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'generative-swarm.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showMessage('Image exported!', 'success');
+        });
+
+        randomizeAllBtn.addEventListener('click', () => {
+            // Randomize all settings except for color
+            settings.particleCount = Math.floor(Math.random() * (500 - 50) + 50);
+            settings.velocityCap = Math.random() * (10 - 1) + 1;
+            settings.trailOpacity = Math.random() * (0.5 - 0.01) + 0.01;
+            settings.repulsionRadius = Math.floor(Math.random() * (200 - 20) + 20);
+            settings.attractionRadius = Math.floor(Math.random() * (300 - 50) + 50);
+            settings.cohesionForce = Math.random() * (0.05 - 0.001) + 0.001;
+            settings.friction = Math.random() * (0.999 - 0.95) + 0.95;
+            settings.randomForce = Math.random() * (0.1 - 0.001) + 0.001;
+            settings.baseRadius = Math.random() * (5 - 1) + 1;
+            settings.maxRadius = Math.random() * (20 - 5) + 5;
+            settings.growthRate = Math.random() * (1 - 0.1) + 0.1;
+            settings.growthChance = Math.random() * (0.05 - 0.001) + 0.001;
+            settings.contagionChance = Math.random() * (1 - 0.1) + 0.1;
+            settings.shrinkChance = Math.random() * (0.05 - 0.001) + 0.001;
+            
+            const shapes = ['circle', 'square', 'triangle', 'star'];
+            if (customImage) {
+                shapes.push('customImage');
+            }
+            settings.shape = shapes[Math.floor(Math.random() * shapes.length)];
+            
+            settings.rotationSpeed = Math.random() * (0.1 - (-0.1)) + (-0.1);
+
+            updateUI();
+            setupCanvas();
+            showMessage('All settings randomized!', 'info');
+        });
+
+        randomizeColorBtn.addEventListener('click', () => {
+            customPalette.length = 0;
+            const newHue = Math.floor(Math.random() * 360);
+            for (let i = 0; i < 5; i++) {
+                const saturation = Math.floor(Math.random() * (80 - 40) + 40);
+                const lightness = Math.floor(Math.random() * (70 - 50) + 50);
+                customPalette.push(`hsl(${newHue}, ${saturation}%, ${lightness}%)`);
+            }
+            
+            settings.colorMode = 'palette';
+            settings.paletteIndex = palettes.length - 1;
+            updateUI();
+            setupCanvas();
+            showMessage('New color palette generated!', 'info');
+        });
+        
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function animate() {
+            ctx.fillStyle = `rgba(0, 0, 0, ${settings.trailOpacity})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate a ramp-up factor for the first few seconds
+            const rampUpFrames = 60 * 5; // 5 seconds at 60fps
+            const rampUpFactor = Math.min(1, frameCount / rampUpFrames);
+
+            particles.forEach((p1, i) => {
+                let dx_total = 0;
+                let dy_total = 0;
+                let neighborCount = 0;
+                let growingNeighbors = 0;
+
+                particles.forEach((p2, j) => {
+                    if (i === j) return;
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < settings.repulsionRadius) {
+                        p1.vx -= dx / distance;
+                        p1.vy -= dy / distance;
+                    } else if (distance < settings.attractionRadius) {
+                        dx_total += dx;
+                        dy_total += dy;
+                        neighborCount++;
+                        if (p2.isGrowing) {
+                            growingNeighbors++;
+                        }
+                    }
+                });
+
+                if (growingNeighbors > 0 && Math.random() < settings.contagionChance) {
+                    p1.isGrowing = true;
+                }
+                if (Math.random() < settings.growthChance) {
+                    p1.isGrowing = true;
+                }
+                if (Math.random() < settings.shrinkChance) {
+                    p1.isGrowing = false;
+                }
+
+                if (p1.isGrowing && p1.radius < settings.maxRadius) {
+                    p1.radius += settings.growthRate;
+                } else if (!p1.isGrowing && p1.radius > settings.baseRadius) {
+                    p1.radius -= settings.growthRate;
+                }
+
+                if (neighborCount > 0) {
+                    // Apply cohesion force with the ramp-up factor
+                    p1.vx += (dx_total / neighborCount) * settings.cohesionForce * rampUpFactor;
+                    p1.vy += (dy_total / neighborCount) * settings.cohesionForce * rampUpFactor;
+                }
+
+                p1.vx *= settings.friction;
+                p1.vy *= settings.friction;
+
+                // Add a small random force to prevent particles from stopping
+                p1.vx += (Math.random() * 2 - 1) * settings.randomForce;
+                p1.vy += (Math.random() * 2 - 1) * settings.randomForce;
+                
+                // Clamp velocity to the new velocityCap
+                const speed = Math.sqrt(p1.vx * p1.vx + p1.vy * p1.vy);
+                if (speed > settings.velocityCap) {
+                    const ratio = settings.velocityCap / speed;
+                    p1.vx *= ratio;
+                    p1.vy *= ratio;
+                }
+
+                p1.x += p1.vx;
+                p1.y += p1.vy;
+                p1.rotation += settings.rotationSpeed; // Update rotation
+
+                if (p1.x < 0) p1.x += canvas.width;
+                if (p1.x > canvas.width) p1.x -= canvas.width;
+                if (p1.y < 0) p1.y += canvas.height;
+                if (p1.y > canvas.height) p1.y -= canvas.height;
+
+                ctx.fillStyle = p1.color;
+                
+                ctx.save();
+                ctx.translate(p1.x, p1.y);
+                ctx.rotate(p1.rotation);
+
+                if (p1.shape === 'square') {
+                    ctx.fillRect(-p1.radius, -p1.radius, p1.radius * 2, p1.radius * 2);
+                } else if (p1.shape === 'triangle') {
+                    ctx.beginPath();
+                    ctx.moveTo(0, -p1.radius);
+                    ctx.lineTo(-p1.radius, p1.radius);
+                    ctx.lineTo(p1.radius, p1.radius);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (p1.shape === 'star') {
+                    drawStar(ctx, 0, 0, 5, p1.radius, p1.radius / 2);
+                } else if (p1.shape === 'customImage' && customImage) {
+                    ctx.drawImage(customImage, -p1.radius, -p1.radius, p1.radius * 2, p1.radius * 2);
+                } else { // 'circle' is the default
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p1.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            frameCount++;
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative Swarm App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col lg:flex-row h-screen overflow-hidden">
+
+    <!-- Canvas Container -->
+    <div class="flex-1 relative flex items-center justify-center">
+        <canvas id="swarmCanvas" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="bg-gray-800 w-full lg:w-96 flex-shrink-0 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold mb-6 text-yellow-300">Swarm Controls</h1>
+
+        <!-- Settings Sliders -->
+        <div id="controls" class="space-y-6">
+            <!-- Particle Count -->
+            <div>
+                <label for="particleCount" class="block mb-2 font-medium">Particle Count: <span id="particleCountValue">100</span></label>
+                <input type="range" id="particleCount" min="10" max="500" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Trail Opacity -->
+            <div>
+                <label for="trailOpacity" class="block mb-2 font-medium">Trail Opacity: <span id="trailOpacityValue">0.05</span></label>
+                <input type="range" id="trailOpacity" min="0.001" max="0.5" value="0.05" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Repulsion Radius -->
+            <div>
+                <label for="repulsionRadius" class="block mb-2 font-medium">Repulsion Radius: <span id="repulsionRadiusValue">50</span></label>
+                <input type="range" id="repulsionRadius" min="0" max="200" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Attraction Radius -->
+            <div>
+                <label for="attractionRadius" class="block mb-2 font-medium">Attraction Radius: <span id="attractionRadiusValue">150</span></label>
+                <input type="range" id="attractionRadius" min="0" max="300" value="150" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Cohesion Force -->
+            <div>
+                <label for="cohesionForce" class="block mb-2 font-medium">Cohesion Force: <span id="cohesionForceValue">0.005</span></label>
+                <input type="range" id="cohesionForce" min="0.001" max="0.05" value="0.005" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Friction -->
+            <div>
+                <label for="friction" class="block mb-2 font-medium">Friction: <span id="frictionValue">0.98</span></label>
+                <input type="range" id="friction" min="0.9" max="0.999" value="0.98" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            
+            <!-- New Sliders for Growth/Shrink Logic -->
+            <h2 class="text-2xl font-bold mt-8 mb-4 text-purple-300">Life Cycle Controls</h2>
+            <div>
+                <label for="baseRadius" class="block mb-2 font-medium">Base Radius: <span id="baseRadiusValue">2</span></label>
+                <input type="range" id="baseRadius" min="1" max="5" value="2" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="maxRadius" class="block mb-2 font-medium">Max Radius: <span id="maxRadiusValue">10</span></label>
+                <input type="range" id="maxRadius" min="5" max="20" value="10" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="growthRate" class="block mb-2 font-medium">Growth Rate: <span id="growthRateValue">0.2</span></label>
+                <input type="range" id="growthRate" min="0.05" max="1.0" value="0.2" step="0.05" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="growthChance" class="block mb-2 font-medium">Growth Chance (Self): <span id="growthChanceValue">0.005</span></label>
+                <input type="range" id="growthChance" min="0.001" max="0.05" value="0.005" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="contagionChance" class="block mb-2 font-medium">Contagion Chance: <span id="contagionChanceValue">0.2</span></label>
+                <input type="range" id="contagionChance" min="0.05" max="1.0" value="0.2" step="0.05" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="shrinkChance" class="block mb-2 font-medium">Shrink Chance (Self): <span id="shrinkChanceValue">0.001</span></label>
+                <input type="range" id="shrinkChance" min="0.001" max="0.05" value="0.001" step="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+        </div>
+
+        <!-- Preset and Export Buttons -->
+        <div class="mt-8 space-y-4">
+            <button id="savePresetBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Save Preset
+            </button>
+            <button id="loadPresetBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Load Preset
+            </button>
+            <button id="exportBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                Export Image
+            </button>
+        </div>
+
+        <div id="messageBox" class="mt-4 text-center p-3 rounded-lg hidden"></div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('swarmCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initial settings from UI
+        let settings = {
+            particleCount: 100,
+            trailOpacity: 0.05,
+            repulsionRadius: 50,
+            attractionRadius: 150,
+            cohesionForce: 0.005,
+            friction: 0.98,
+            // New settings for growth logic
+            baseRadius: 2,
+            maxRadius: 10,
+            growthRate: 0.2,
+            growthChance: 0.005,
+            contagionChance: 0.2,
+            shrinkChance: 0.001
+        };
+
+        const particles = [];
+
+        function setupCanvas() {
+            canvas.width = window.innerWidth > 768 ? window.innerWidth - 384 : window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            particles.length = 0; // Clear existing particles
+            for (let i = 0; i < settings.particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: Math.random() * 2 - 1,
+                    vy: Math.random() * 2 - 1,
+                    color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+                    // New properties for growth/shrink logic
+                    radius: settings.baseRadius,
+                    isGrowing: false
+                });
+            }
+        }
+        setupCanvas();
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            updateSettings();
+        });
+
+        const sliders = document.querySelectorAll('#controls input[type="range"]');
+        const valueSpans = document.querySelectorAll('#controls span');
+
+        sliders.forEach(slider => {
+            const valueSpan = document.getElementById(slider.id + 'Value');
+            slider.addEventListener('input', () => {
+                valueSpan.textContent = slider.value;
+                settings[slider.id] = parseFloat(slider.value);
+                if (slider.id === 'particleCount') {
+                    setupCanvas();
+                } else if (slider.id === 'baseRadius') {
+                    // Update all particles' base radius if changed
+                    particles.forEach(p => p.radius = settings.baseRadius);
+                }
+            });
+        });
+
+        const saveBtn = document.getElementById('savePresetBtn');
+        const loadBtn = document.getElementById('loadPresetBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const messageBox = document.getElementById('messageBox');
+
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `mt-4 text-center p-3 rounded-lg transition-all duration-300`;
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-600', 'text-white', 'block');
+            } else if (type === 'info') {
+                messageBox.classList.add('bg-blue-600', 'text-white', 'block');
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('block');
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        saveBtn.addEventListener('click', () => {
+            localStorage.setItem('swarmPreset', JSON.stringify(settings));
+            showMessage('Preset saved!', 'success');
+        });
+
+        loadBtn.addEventListener('click', () => {
+            const savedPreset = localStorage.getItem('swarmPreset');
+            if (savedPreset) {
+                const newSettings = JSON.parse(savedPreset);
+                settings = newSettings;
+                for (const key in newSettings) {
+                    const slider = document.getElementById(key);
+                    if (slider) {
+                        slider.value = newSettings[key];
+                        document.getElementById(key + 'Value').textContent = newSettings[key];
+                    }
+                }
+                setupCanvas();
+                showMessage('Preset loaded!', 'info');
+            } else {
+                showMessage('No saved preset found.', 'info');
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'generative-swarm.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showMessage('Image exported!', 'success');
+        });
+
+        function animate() {
+            ctx.fillStyle = `rgba(0, 0, 0, ${settings.trailOpacity})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p1, i) => {
+                let dx_total = 0;
+                let dy_total = 0;
+                let neighborCount = 0;
+                let growingNeighbors = 0;
+
+                particles.forEach((p2, j) => {
+                    if (i === j) return;
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < settings.repulsionRadius) {
+                        p1.vx -= dx / distance;
+                        p1.vy -= dy / distance;
+                    } else if (distance < settings.attractionRadius) {
+                        dx_total += dx;
+                        dy_total += dy;
+                        neighborCount++;
+                        if (p2.isGrowing) {
+                            growingNeighbors++;
+                        }
+                    }
+                });
+
+                // New Rules: Growth Contagion & Random State Change
+                if (growingNeighbors > 0 && Math.random() < settings.contagionChance) {
+                    p1.isGrowing = true;
+                }
+                if (Math.random() < settings.growthChance) {
+                    p1.isGrowing = true;
+                }
+                if (Math.random() < settings.shrinkChance) {
+                    p1.isGrowing = false;
+                }
+
+                // New Rule: Apply growth or shrinkage based on state
+                if (p1.isGrowing && p1.radius < settings.maxRadius) {
+                    p1.radius += settings.growthRate;
+                } else if (!p1.isGrowing && p1.radius > settings.baseRadius) {
+                    p1.radius -= settings.growthRate;
+                }
+
+                if (neighborCount > 0) {
+                    p1.vx += (dx_total / neighborCount) * settings.cohesionForce;
+                    p1.vy += (dy_total / neighborCount) * settings.cohesionForce;
+                }
+
+                p1.vx *= settings.friction;
+                p1.vy *= settings.friction;
+
+                p1.x += p1.vx;
+                p1.y += p1.vy;
+
+                if (p1.x < 0) p1.x += canvas.width;
+                if (p1.x > canvas.width) p1.x -= canvas.width;
+                if (p1.y < 0) p1.y += canvas.height;
+                if (p1.y > canvas.height) p1.y -= canvas.height;
+
+                ctx.fillStyle = p1.color;
+                ctx.beginPath();
+                ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
